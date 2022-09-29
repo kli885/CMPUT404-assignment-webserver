@@ -35,7 +35,11 @@ class MyWebServer(socketserver.BaseRequestHandler):
         self.headers = self.data.decode().split("\r\n")
         self.method = self.headers[0].split(' ')[0]
         self.path = self.headers[0].split(' ')[1]
-        self.host = self.headers[1].split(": ")[1]
+
+        for header in self.headers:
+            if "Host" in header:
+                self.host = header.split(": ")[1]
+                break
 
         self.path = "./www" + self.path
 
