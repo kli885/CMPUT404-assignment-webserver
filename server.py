@@ -44,7 +44,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
     def status_handler(self):
         if self.method == "GET":
             if os.path.isdir(self.path) and not self.path.endswith('/'):
-                return "HTTP/1.1 301 Moved Permanently\r\n\r\nLocation: http://{}{}/\r\n".format(self.host, self.path[1:])
+                return "HTTP/1.1 301 Moved Permanently\r\n\r\nLocation: http://{}{}/\r\n".format(self.host, self.path.split('/',2)[2])
             if self.path.endswith('/'):
                 self.path += "index.html"
             try:
