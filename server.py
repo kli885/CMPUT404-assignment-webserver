@@ -1,5 +1,6 @@
 #  coding: utf-8 
 import socketserver
+import os
 
 # Copyright 2013 Abram Hindle, Eddie Antonio Santos
 # 
@@ -31,8 +32,37 @@ class MyWebServer(socketserver.BaseRequestHandler):
     
     def handle(self):
         self.data = self.request.recv(1024).strip()
-        print ("Got a request of: %s\n" % self.data)
-        self.request.sendall(bytearray("OK",'utf-8'))
+        self.headers = self.data.decode().split("\r\n")
+        self.method = self.headers[0].split(' ')[0]
+        self.path = self.headers[0].split(' ')[1]
+        self.host = self.headers[1].split(": ")[1]
+
+        self.path = "./www" + self.path
+
+        self.request.sendall(self.status_handler().encode())
+    
+    def status_handler(self):
+        if self.method == "GET":
+            if os.path.isdir(self.path) and not self.path.endswith('/'):
+                return "HTTP/1.1 301 Moved Permanently\r\n\r\nLocation: http://{}{}/\r\n".format(self.host, self.path[1:])
+            if self.path.endswith('/'):
+                self.path += "index.html"
+            try:
+                if ".." in self.path:
+                    raise FileNotFoundError
+                with open(self.path, 'r') as file:
+                    return "HTTP/1.1 200 OK\r\nContent-Type: {}\r\n\r\n{}\r\n".format(self.get_mime_type(), file.read())
+            except:
+                return "HTTP/1.1 404 Not Found\r\n\r\nConnection: Closed\r\n"
+        else:
+            return "HTTP/1.1 405 Method not allowed\r\n"
+    
+    def get_mime_type(self):
+        if self.path.endswith('.html'):
+            return "text/html"
+        elif self.path.endswith('.css'):
+            return "text/css"
+
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080
